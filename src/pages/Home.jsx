@@ -1,37 +1,41 @@
 import React from 'react'
 import styled from 'styled-components'
-import Hero from '../components/Hero'
+// Importe o Header que você já tem (se for HeaderPerfil ou outro, ajuste o nome)
+import HeaderPerfil from '../components/HeaderPerfil' 
+import ProductCard from '../components/ProductCard'
 import Footer from '../components/Footer'
-import Card from '../components/Card'
-import items from '../data/items'
 
 const Container = styled.main`
   max-width: 1024px;
   width: 100%;
   margin: 0 auto;
-  padding: 80px 0;
+  padding: 80px 20px;
 `
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Design mostra 2 colunas */
+  grid-template-columns: 1fr 1fr;
   column-gap: 80px;
   row-gap: 48px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    padding: 0 20px;
-  }
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
 `
 
-export default function Home() {
+export default function Home({ restaurantes }) {
   return (
     <>
-      <Hero />
+      {/* Usando o Header que você já tem para evitar erro de importação */}
+      <HeaderPerfil cartCount={0} /> 
       <Container>
         <Grid>
-          {items.map(item => (
-            <Card key={item.id} item={item} />
+          {restaurantes.map((res) => (
+            <ProductCard 
+              key={res.id}
+              id={res.id}
+              titulo={res.titulo}
+              capa={res.capa}
+              descricao={res.descricao}
+              isRestaurante={true} 
+            />
           ))}
         </Grid>
       </Container>

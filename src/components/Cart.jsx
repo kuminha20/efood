@@ -30,7 +30,6 @@ const Sidebar = styled.aside`
   overflow-y: auto;
 `
 
-/* ESTILOS DOS ITENS DO CARRINHO */
 const CartItem = styled.div`
   background-color: ${p => p.theme.colors.background};
   display: flex;
@@ -57,7 +56,6 @@ const TotalPrice = styled.div`
   margin: 40px 0 16px;
 `
 
-/* ESTILOS DOS FORMULÁRIOS (ENTREGA E PAGAMENTO) */
 const FormTitle = styled.h3`
   color: ${p => p.theme.colors.background};
   font-size: 16px;
@@ -67,7 +65,6 @@ const FormTitle = styled.h3`
 
 const InputGroup = styled.div`
   margin-bottom: 8px;
-
   label {
     display: block;
     color: ${p => p.theme.colors.background};
@@ -75,7 +72,6 @@ const InputGroup = styled.div`
     font-weight: 700;
     margin-bottom: 4px;
   }
-
   input {
     width: 100%;
     background-color: ${p => p.theme.colors.background};
@@ -87,16 +83,6 @@ const InputGroup = styled.div`
   }
 `
 
-const InputRow = styled.div`
-  display: flex;
-  gap: 34px;
-
-  ${InputGroup} {
-    flex: 1;
-  }
-`
-
-/* ESTILOS DOS BOTÕES */
 const PrimaryButton = styled.button`
   background-color: ${p => p.theme.colors.background};
   color: ${p => p.theme.colors.primary};
@@ -121,17 +107,18 @@ const ConfirmationText = styled.p`
 `
 
 export default function Cart({ isOpen, onClose, items, onRemove }) {
-  // Estado que controla qual passo estamos vendo
   const [step, setStep] = useState('cart')
 
-  // Calcula o total real dos itens no carrinho
+  // --- O CORRETOR DO ERRO ESTÁ AQUI ---
+  // A API envia 'preco' como número. Não usamos mais .replace()!
   const totalPrice = items.reduce((acc, item) => {
-    // Remove o "R$ " e converte para número para somar
-    const price = parseFloat(item.price.replace('R$', '').replace(',', '.'))
-    return acc + price
+    return acc + (item.preco || 0)
   }, 0)
 
-  // Função para fechar e resetar o carrinho para o estado inicial
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)
+  }
+
   const handleClose = () => {
     setStep('cart')
     onClose()
@@ -142,32 +129,29 @@ export default function Cart({ isOpen, onClose, items, onRemove }) {
       <div className="overlay" onClick={handleClose} />
       <Sidebar>
         
-        {/* PASSO 1: CARRINHO DINÂMICO */}
         {step === 'cart' && (
           <>
             {items.map((item) => (
-              // Mudamos o key para cartId
-  <CartItem key={item.cartId}> 
-    <img src={item.image} alt={item.name} />
-    <div>
-      <h3>{item.name}</h3>
-      <p>{item.price}</p>
-    </div>
-    <button 
-      // Agora passamos o cartId para a função de remover
-      onClick={() => onRemove(item.cartId)} 
-      style={{ position: 'absolute', right: 8, bottom: 8, border: 'none', background: 'none', cursor: 'pointer' }}
-    >
-      🗑️
-    </button>
-  </CartItem>
-))}
+              <CartItem key={item.cartId}> 
+                <img src={item.foto} alt={item.nome} /> 
+                <div>
+                  <h3>{item.nome}</h3>
+                  <p>{formatPrice(item.preco)}</p>
+                </div>
+                <button 
+                  onClick={() => onRemove(item.cartId)} 
+                  style={{ position: 'absolute', right: 8, bottom: 8, border: 'none', background: 'none', cursor: 'pointer', fontSize: '16px' }}
+                >
+                  🗑️
+                </button>
+              </CartItem>
+            ))}
             
             {items.length > 0 ? (
               <>
                 <TotalPrice>
                   <span>Valor total</span>
-                  <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+                  <span>{formatPrice(totalPrice)}</span>
                 </TotalPrice>
                 <PrimaryButton onClick={() => setStep('delivery')}>
                   Continuar com a entrega
@@ -179,7 +163,6 @@ export default function Cart({ isOpen, onClose, items, onRemove }) {
           </>
         )}
 
-        {/* PASSO 2: ENTREGA COM VALIDAÇÃO */}
         {step === 'delivery' && (
           <form onSubmit={(e) => { e.preventDefault(); setStep('payment'); }}>
             <FormTitle>Entrega</FormTitle>
@@ -191,8 +174,6 @@ export default function Cart({ isOpen, onClose, items, onRemove }) {
               <label htmlFor="address">Endereço</label>
               <input id="address" type="text" required />
             </InputGroup>
-            {/* ... adicione 'required' em todos os campos obrigatórios */}
-            
             <div style={{ marginTop: '24px' }}>
               <PrimaryButton type="submit">Continuar para o pagamento</PrimaryButton>
               <SecondaryButton type="button" onClick={() => setStep('cart')}>Voltar para o carrinho</SecondaryButton>
@@ -200,27 +181,23 @@ export default function Cart({ isOpen, onClose, items, onRemove }) {
           </form>
         )}
 
-        {/* PASSO 3: PAGAMENTO COM VALIDAÇÃO */}
         {step === 'payment' && (
           <form onSubmit={(e) => { e.preventDefault(); setStep('confirmation'); }}>
-            <FormTitle>Pagamento - Valor a pagar R$ {totalPrice.toFixed(2).replace('.', ',')}</FormTitle>
+            <FormTitle>Pagamento - Valor a pagar {formatPrice(totalPrice)}</FormTitle>
             <InputGroup>
               <label>Nome no cartão</label>
               <input type="text" required />
             </InputGroup>
-            {/* Use o 'required' em todos os campos de cartão */}
-            
             <div style={{ marginTop: '24px' }}>
               <PrimaryButton type="submit">Finalizar pagamento</PrimaryButton>
-              <SecondaryButton type="button" onClick={() => setStep('delivery')}>Voltar para a edição de endereço</SecondaryButton>
+              <SecondaryButton type="button" onClick={() => setStep('delivery')}>Voltar para o endereço</SecondaryButton>
             </div>
           </form>
         )}
 
-        {/* PASSO 4: CONFIRMAÇÃO */}
         {step === 'confirmation' && (
           <>
-            <FormTitle>Pedido realizado - ORDER_ID</FormTitle>
+            <FormTitle>Pedido realizado!</FormTitle>
             <ConfirmationText>
               Estamos felizes em informar que seu pedido já está em processo de preparação...
             </ConfirmationText>

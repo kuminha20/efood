@@ -1,12 +1,10 @@
 import React, { useState } from 'react'
-import styled from 'styled-components'
 import { useParams } from 'react-router-dom'
-
 import HeaderPerfil from '../components/HeaderPerfil'
 import Banner from '../components/Banner'
 import ProductCard from '../components/ProductCard'
 import Footer from '../components/Footer'
-import items from '../data/items'
+import styled from 'styled-components'
 
 const Container = styled.main`
   max-width: 1024px;
@@ -96,65 +94,52 @@ const AddToCartBtn = styled.button`
   margin-top: 16px;
 `
 
-export default function Perfil({ onAddToCart, cartCount, onOpenCart }) {
+export default function Perfil({ restaurantes, onAddToCart, cartCount, onOpenCart }) {
   const { id } = useParams()
   const [selectedProduct, setSelectedProduct] = useState(null)
 
-  const restaurant = items.find(i => String(i.id) === id)
-  const menuItems = restaurant?.menu || [] 
+  const restaurant = restaurantes.find(r => String(r.id) === id)
+  const menuItems = restaurant?.cardapio || []
 
   return (
     <>
       <HeaderPerfil onOpenCart={onOpenCart} cartCount={cartCount} />
+      {restaurant && <Banner image={restaurant.capa} name={restaurant.titulo} category={restaurant.tipo} />}
       
-      {restaurant && (
-        <Banner 
-          image={restaurant.image} 
-          category={restaurant.tag} 
-          name={restaurant.name} 
-        />
-      )}
-
       <Container>
         <Grid>
           {menuItems.map((prato) => (
             <ProductCard 
               key={prato.id} 
               item={prato} 
+              isRestaurante={false}
               onOpenModal={() => setSelectedProduct(prato)} 
             />
           ))}
         </Grid>
       </Container>
 
-      <Footer />
-
       <Modal $isOpen={!!selectedProduct}>
         <div className="overlay" onClick={() => setSelectedProduct(null)} />
         {selectedProduct && (
           <ModalContent>
-            {/* Usando o CloseButton que definimos como div/texto aqui */}
             <CloseButton onClick={() => setSelectedProduct(null)}>X</CloseButton>
-            
-            <ModalImg src={selectedProduct.image} alt={selectedProduct.name} />
+            <ModalImg src={selectedProduct.foto} alt={selectedProduct.nome} />
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '900' }}>{selectedProduct.name}</h2>
-              <p style={{ marginTop: '16px', lineHeight: '22px', fontSize: '14px' }}>
-                {selectedProduct.description}
-              </p>
-              <p style={{ marginTop: '16px', fontSize: '14px' }}>{selectedProduct.portion}</p>
-              <AddToCartBtn 
-  onClick={() => {
-    onAddToCart(selectedProduct); // Envia o produto para o estado do App.jsx
-    setSelectedProduct(null);    // Fecha o modal para mostrar o carrinho
-  }}
->
-  Adicionar ao carrinho - {selectedProduct.price}
-</AddToCartBtn>
+              <h2>{selectedProduct.nome}</h2>
+              <p>{selectedProduct.descricao}</p>
+              <p>Serve: {selectedProduct.porcao}</p>
+              <AddToCartBtn onClick={() => {
+                onAddToCart(selectedProduct); // ISSO FAZ FUNCIONAR!
+                setSelectedProduct(null);
+              }}>
+                Adicionar ao carrinho - R$ {selectedProduct.preco.toFixed(2)}
+              </AddToCartBtn>
             </div>
           </ModalContent>
         )}
       </Modal>
+      <Footer />
     </>
   )
 }

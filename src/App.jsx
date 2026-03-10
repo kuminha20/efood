@@ -1,59 +1,68 @@
-import React, {useState} from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom' // Adicionei BrowserRouter aqui
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from 'styled-components'
+
+// Importações das páginas
 import Home from './pages/Home'
-import Menu from './pages/Menu'
 import Perfil from './pages/Perfil'
+
+// Importações globais
 import GlobalStyle from './styles/globalStyles'
 import { lightTheme } from './styles/theme'
 import Cart from './components/Cart'
 
 export default function App() {
+  const [restaurantes, setRestaurantes] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState([])
-  // 1. Adicionar ao carrinho com um ID único para cada instância do item
-const addToCart = (item) => {
-  // Criamos um novo objeto com as mesmas propriedades, mas com um cartId único
-  const itemWithUniqueId = { 
-    ...item, 
-    cartId: Math.random() // Gera um ID temporário único para esta "unidade" no carrinho
-  }
-  
-  // Usamos (prev) => ... para garantir que pegamos o estado mais atualizado
-  setCartItems((prevItems) => [...prevItems, itemWithUniqueId])
-  setIsCartOpen(true)
-}
 
-// 2. Remover usando o cartId único
-const removeFromCart = (cartId) => {
-  setCartItems((prevItems) => 
-    prevItems.filter((item) => item.cartId !== cartId)
-  )
-}
+  // Chamada AJAX (Fetch API) para buscar os dados
+  useEffect(() => {
+    fetch('https://api-ebac.vercel.app/api/efood/restaurantes')
+      .then((res) => res.json())
+      .then((data) => setRestaurantes(data))
+      .catch((err) => console.error("Erro ao carregar restaurantes:", err))
+  }, [])
+
+  const addToCart = (item) => {
+    // Adiciona o cartId para garantir que cada item no carrinho seja único
+    const itemWithUniqueId = { ...item, cartId: Math.random() }
+    setCartItems((prev) => [...prev, itemWithUniqueId])
+    setIsCartOpen(true)
+  }
+
+  const removeFromCart = (cartId) => {
+    setCartItems((prev) => prev.filter((i) => i.cartId !== cartId))
+  }
+
+  // Se a API ainda não respondeu, mostramos uma tela de carregamento para evitar erros de 'undefined'
+  if (restaurantes.length === 0) {
+    return <div style={{ color: '#E66767', textAlign: 'center', marginTop: '100px' }}>Carregando...</div>
+  }
 
   return (
     <ThemeProvider theme={lightTheme}>
         <GlobalStyle />
         <Cart 
           items={cartItems} 
-          onRemove={removeFromCart}
+          onRemove={removeFromCart} 
           isOpen={isCartOpen} 
           onClose={() => setIsCartOpen(false)} 
         />
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/perfil/:id"
-        element={
-          <Perfil
-          cartCount={cartItems.length}
-          onOpenCart={() => setIsCartOpen(true)}
-          onAddToCart={addToCart}
+        <Routes>
+          <Route path="/" element={<Home restaurantes={restaurantes} />} />
+          <Route 
+            path="/perfil/:id" 
+            element={
+              <Perfil 
+                restaurantes={restaurantes} 
+                cartCount={cartItems.length} 
+                onOpenCart={() => setIsCartOpen(true)}
+                onAddToCart={addToCart} 
+              />
+            } 
           />
-        }
-      />
-    </Routes>
-  </ThemeProvider>
+        </Routes>
+    </ThemeProvider>
   )
 }
