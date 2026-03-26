@@ -1,11 +1,16 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { add } from '../store/cartSlice'
+import styled from 'styled-components'
+
+// Importe seus componentes
 import HeaderPerfil from '../components/HeaderPerfil'
 import Banner from '../components/Banner'
 import ProductCard from '../components/ProductCard'
 import Footer from '../components/Footer'
-import styled from 'styled-components'
 
+// Estilização necessária para esta página
 const Container = styled.main`
   max-width: 1024px;
   width: 100%;
@@ -36,13 +41,15 @@ const Modal = styled.div`
   display: ${p => (p.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
+  padding: 20px;
 
   .overlay {
     position: absolute;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
+    cursor: pointer; /* Feedback visual que o overlay fecha o modal */
   }
 `
 
@@ -53,12 +60,47 @@ const ModalContent = styled.div`
   color: #fff;
   padding: 32px;
   max-width: 1024px;
+  width: 100%;
   display: flex;
   gap: 24px;
+  
+  /* Lógica de Rolagem Responsiva */
+  max-height: 90vh; /* Não deixa o modal ser maior que a tela */
+  overflow-y: auto; /* Ativa a rolagem interna */
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    margin: 20px;
+    /* No mobile, inverte a ordem: imagem fica embaixo do texto e botão de fechar */
+    flex-direction: column-reverse; 
+    padding: 16px;
+    gap: 16px;
+  }
+`
+
+// --- O BOTÃO DE FECHAR (X) FLUTUANTE ---
+const CloseButton = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px; /* Aumentado para mobile */
+  font-weight: bold;
+  color: #fff;
+  padding: 12px; /* Área de toque maior (importante para smartphones) */
+  line-height: 1;
+  z-index: 10; /* Garante que fique acima da imagem */
+
+  @media (max-width: 768px) {
+    top: 0;
+    right: 0;
+    color: ${p => p.theme.colors.background}; /* Cor de contraste (ex: creme) no mobile */
+    font-size: 28px;
+    padding: 16px; /* Área de toque ainda maior no mobile */
+  }
+
+  &:hover {
+    opacity: 0.7;
   }
 `
 
@@ -66,21 +108,12 @@ const ModalImg = styled.img`
   width: 280px;
   height: 280px;
   object-fit: cover;
-`
+  flex-shrink: 0;
 
-const CloseButton = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  color: #fff;
-  padding: 8px;
-  line-height: 1;
-
-  &:hover {
-    opacity: 0.7;
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 180px; /* Diminui a imagem no mobile */
+    margin-top: 16px; /* Espaço para o botão 'X' não sobrepor no mobile */
   }
 `
 
@@ -88,23 +121,38 @@ const AddToCartBtn = styled.button`
   background: ${p => p.theme.colors.background};
   color: ${p => p.theme.colors.primary};
   border: none;
-  padding: 4px 8px;
+  padding: 12px;
   font-weight: bold;
   cursor: pointer;
   margin-top: 16px;
+  width: fit-content;
+
+  @media (max-width: 768px) {
+    width: 100%; /* Botão ocupa a largura toda no mobile */
+  }
 `
 
-export default function Perfil({ restaurantes, onAddToCart, cartCount, onOpenCart }) {
+export default function Perfil({ restaurantes }) {
   const { id } = useParams()
+  const dispatch = useDispatch()
   const [selectedProduct, setSelectedProduct] = useState(null)
 
+  // Busca o restaurante
   const restaurant = restaurantes.find(r => String(r.id) === id)
-  const menuItems = restaurant?.cardapio || []
+
+  // Se não achar o restaurante (carregando ou ID errado), retorna nulo para não quebrar
+  if (!restaurant) return null
+
+  const menuItems = restaurant.cardapio || []
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)
+  }
 
   return (
     <>
-      <HeaderPerfil onOpenCart={onOpenCart} cartCount={cartCount} />
-      {restaurant && <Banner image={restaurant.capa} name={restaurant.titulo} category={restaurant.tipo} />}
+      <HeaderPerfil /> 
+      <Banner image={restaurant.capa} name={restaurant.titulo} category={restaurant.tipo} />
       
       <Container>
         <Grid>
@@ -127,13 +175,15 @@ export default function Perfil({ restaurantes, onAddToCart, cartCount, onOpenCar
             <ModalImg src={selectedProduct.foto} alt={selectedProduct.nome} />
             <div>
               <h2>{selectedProduct.nome}</h2>
+              <br />
               <p>{selectedProduct.descricao}</p>
+              <br />
               <p>Serve: {selectedProduct.porcao}</p>
               <AddToCartBtn onClick={() => {
-                onAddToCart(selectedProduct); // ISSO FAZ FUNCIONAR!
-                setSelectedProduct(null);
+                dispatch(add(selectedProduct))
+                setSelectedProduct(null)
               }}>
-                Adicionar ao carrinho - R$ {selectedProduct.preco.toFixed(2)}
+                Adicionar ao carrinho - {formatPrice(selectedProduct.preco)}
               </AddToCartBtn>
             </div>
           </ModalContent>

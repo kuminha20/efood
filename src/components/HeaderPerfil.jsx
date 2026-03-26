@@ -1,3 +1,5 @@
+import { useSelector, useDispatch } from 'react-redux'
+import { toggleCart } from '../store/cartSlice'
 import React from 'react'
 import styled from 'styled-components'
 import { Link } from 'react-router-dom'
@@ -10,6 +12,11 @@ const HeaderContainer = styled.header`
   height: 186px;
   display: flex;
   align-items: center;
+  padding: 0 20px;
+
+  @media (max-width: 768px) {
+    height: 160px; /* Diminui a altura no mobile para ganhar espaço */
+  }
 `
 
 const HeaderContent = styled.div`
@@ -19,7 +26,12 @@ const HeaderContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    /* No mobile muito pequeno, podemos empilhar ou reduzir o texto */
+    gap: 5px;
+  }
 `
 
 const HeaderText = styled(Link)`
@@ -27,13 +39,35 @@ const HeaderText = styled(Link)`
   font-weight: 900;
   color: ${p => p.theme.colors.primary};
   text-decoration: none;
+  width: 33%; /* Garante espaço igual para os lados */
+
+  &:last-child {
+    text-align: right; /* Alinha o carrinho à direita */
+  }
+
+  @media (max-width: 768px) {
+    font-size: 14px; /* Diminui a fonte para não quebrar linha */
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    /* Se o texto "Restaurantes" for muito grande, podemos ocultá-lo 
+       ou abreviá-lo para manter o design limpo */
+  }
 `
 
 const Logo = styled.img`
   width: 125px;
+  
+  @media (max-width: 768px) {
+    width: 100px; /* Logo menor no mobile */
+  }
 `
 
-export default function HeaderPerfil({ onOpenCart, cartCount }) {
+export default function HeaderPerfil() {
+  const items = useSelector((state) => state.cart.items)
+  const dispatch = useDispatch()
+
   return (
     <HeaderContainer>
       <HeaderContent>
@@ -41,10 +75,15 @@ export default function HeaderPerfil({ onOpenCart, cartCount }) {
         <Link to="/">
           <Logo src={logo} alt="efood" />
         </Link>
-        {/* Este texto abrirá o side menu do carrinho no futuro */}
-        <HeaderText as="span" style={{ cursor: 'pointer' }} onClick={onOpenCart}>
-          {cartCount} produto(s) no carrinho
-        </HeaderText>
+        {/* O onClick agora dispara a ação do Redux corretamente */}
+        <HeaderText 
+  as="span" 
+  style={{ cursor: 'pointer', textAlign: 'right' }} 
+  onClick={() => dispatch(toggleCart())}
+>
+  {/* No mobile, podemos mostrar apenas o ícone ou encurtar o texto */}
+  {items.length} <span className="mobile-hide">produto(s)</span>
+</HeaderText>
       </HeaderContent>
     </HeaderContainer>
   )
