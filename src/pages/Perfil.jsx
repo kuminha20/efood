@@ -118,17 +118,22 @@ const ModalImg = styled.img`
 `
 
 const AddToCartBtn = styled.button`
-  background: ${p => p.theme.colors.background};
-  color: ${p => p.theme.colors.primary};
+  background-color: ${p => p.theme.colors.background}; /* Cor clara do fundo */
+  color: ${p => p.theme.colors.primary};              /* Cor escura do texto */
   border: none;
   padding: 12px;
   font-weight: bold;
   cursor: pointer;
   margin-top: 16px;
-  width: fit-content;
+  width: fit-content; /* No mobile ele vira 100% por causa da media query que já temos */
+  font-size: 14px;
 
   @media (max-width: 768px) {
-    width: 100%; /* Botão ocupa a largura toda no mobile */
+    width: 100%; 
+  }
+
+  &:hover {
+    opacity: 0.8;
   }
 `
 
