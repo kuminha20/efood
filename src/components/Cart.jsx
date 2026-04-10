@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import styled from 'styled-components'
 import { useSelector, useDispatch } from 'react-redux'
 import { remove, toggleCart, clear } from '../store/cartSlice'
+import lixeira from '../assets/lixeira.png'
 
 // --- ESTILOS ---
 const CartContainer = styled.div`
@@ -39,32 +40,61 @@ const Sidebar = styled.aside`
 `
 
 const CartItem = styled.div`
-  background-color: ${p => p.theme.colors.background};
+  background-color: ${p => p.theme.colors.background}; /* Cor creme/bege */
   display: flex;
   padding: 8px;
   margin-bottom: 16px;
-  position: relative;
+  position: relative; /* Necessário para a lixeira se posicionar em relação a ele */
   
-  img {
+  /* Imagem do prato (quadrada) */
+  > img {
     height: 80px;
     width: 80px;
-    min-width: 80px;
     object-fit: cover;
     margin-right: 8px;
   }
 
+  /* Container do Texto */
   div {
-    h3 { font-size: 16px; font-weight: 900; color: ${p => p.theme.colors.primary}; }
-    p { font-size: 14px; color: ${p => p.theme.colors.primary}; margin-top: 8px; }
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Alinha o texto no topo */
+
+    h3 { 
+      font-size: 18px; 
+      font-weight: 900; 
+      color: ${p => p.theme.colors.primary};
+      margin-bottom: 16px; /* Espaço exato entre título e preço da foto */
+      line-height: 1;
+    }
+    
+    p { 
+      font-size: 14px; 
+      color: ${p => p.theme.colors.primary};
+      font-weight: 400;
+    }
+  }
+`
+
+const DeleteButton = styled.button`
+  position: absolute;
+  bottom: 8px;   /* Distância do fundo do card */
+  right: 8px;    /* Distância da direita do card */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+
+  img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
   }
 
-  button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: none;
-    border: none;
-    cursor: pointer;
+  &:hover {
+    opacity: 0.7;
   }
 `
 
@@ -194,24 +224,45 @@ export default function Cart() {
       <Sidebar>
         
         {step === 'cart' && (
-          <>
-            <h3 style={{color: '#fff', marginBottom: '16px'}}>Carrinho</h3>
-            {items.map((item) => (
-              <CartItem key={item.cartId}>
-                <img src={item.foto} alt={item.nome} />
-                <div>
-                  <h3>{item.nome}</h3>
-                  <p>{formatPrice(item.preco)}</p>
-                </div>
-                <button onClick={() => dispatch(remove(item.cartId))}>🗑️</button>
-              </CartItem>
-            ))}
-            <div style={{display: 'flex', justifyContent: 'space-between', color: '#fff', marginTop: '24px', fontWeight: '700'}}>
-              <span>Total</span> <span>{formatPrice(totalPrice)}</span>
+  <>
+    {/* Lista de itens */}
+    {items.length > 0 ? (
+      <>
+        {items.map((item) => (
+          <CartItem key={item.cartId}>
+            <img src={item.foto} alt={item.nome} />
+            <div>
+              <h3>{item.nome}</h3>
+              <p>{formatPrice(item.preco)}</p>
             </div>
-            <PrimaryButton onClick={() => setStep('delivery')}>Continuar com entrega</PrimaryButton>
-          </>
-        )}
+            <DeleteButton onClick={() => dispatch(remove(item.cartId))}>
+              <img src={lixeira} alt="Remover item" />
+            </DeleteButton>
+          </CartItem>
+        ))}
+
+        {/* VALOR TOTAL - Faltava este trecho */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          color: '#fff',
+          marginTop: '24px',
+          fontWeight: '700'
+        }}>
+          <span>Valor total</span>
+          <span>{formatPrice(totalPrice)}</span>
+        </div>
+
+        {/* BOTÃO CONTINUAR - Faltava este trecho */}
+        <PrimaryButton onClick={() => setStep('delivery')}>
+          Continuar com a entrega
+        </PrimaryButton>
+      </>
+    ) : (
+      <p style={{ color: '#fff', textAlign: 'center' }}>O carrinho está vazio.</p>
+    )}
+  </>
+)}
 
 {/* --- ETAPA DE ENTREGA --- */}
 {step === 'delivery' && (
